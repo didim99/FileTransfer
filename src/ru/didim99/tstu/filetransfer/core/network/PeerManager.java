@@ -1,5 +1,6 @@
 package ru.didim99.tstu.filetransfer.core.network;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -53,11 +54,19 @@ class PeerManager {
     peer.openSocket();
     peer.sendFileList();
     peer.sendPeerList(peers);
+    peer.initTransfer();
     peers.add(peer);
   }
 
   void onPeerDisconnected(Peer peer) {
     peers.remove(peer);
+  }
+
+  void dispatchRemoteFileEvent(FileManager.Event event, File file)
+    throws IOException {
+    Peer peer = peers.get(event.getPeerIndex());
+    fileManager.prepareTransfer(peer.getInfo(), file);
+    peer.dispatchFileEvent(event);
   }
 
   void add(PeerInfo info) throws IOException {

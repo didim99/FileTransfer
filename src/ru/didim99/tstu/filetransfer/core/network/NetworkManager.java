@@ -1,5 +1,6 @@
 package ru.didim99.tstu.filetransfer.core.network;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import ru.didim99.tstu.filetransfer.core.StatusPublisher;
@@ -100,6 +101,11 @@ public class NetworkManager implements NetworkEventListener {
     peerManager.stopListen();
     publisher.updateConnectionStatus(false);
     updateStatus(Status.NOT_CONNECTED);
+  }
+
+  public void dispatchRemoteFileEvent(FileManager.Event event, File file)
+    throws IOException {
+    peerManager.dispatchRemoteFileEvent(event, file);
   }
 
   private void updateStatus(Status newStatus) {

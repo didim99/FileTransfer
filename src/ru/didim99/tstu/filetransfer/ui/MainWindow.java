@@ -46,7 +46,8 @@ public class MainWindow extends JFrame implements StatusPublisher {
     JMenuItem itemDownload = new JMenuItem(R.DOWNLOAD);
     itemDownload.addActionListener(e -> listener.onFileEvent(
       new FileManager.Event(FileManager.Event.Type.DOWNLOAD,
-        peerList.getSelectedIndex(), remoteFileList.getSelectedIndex())));
+        peerList.getSelectedIndex(), remoteFileList.getSelectedIndex(),
+        remoteFileList.getSelectedValue().getFileName())));
     remoteFileMenu.add(itemDownload);
 
     btnConnect.addActionListener(e ->

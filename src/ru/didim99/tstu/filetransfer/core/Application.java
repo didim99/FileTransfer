@@ -1,7 +1,8 @@
 package ru.didim99.tstu.filetransfer.core;
 
+import java.io.File;
 import java.io.IOException;
-import javax.swing.JFileChooser;
+import javax.swing.*;
 import ru.didim99.tstu.filetransfer.core.file.FileEventListener;
 import ru.didim99.tstu.filetransfer.core.file.FileListInfo;
 import ru.didim99.tstu.filetransfer.core.file.FileManager;
@@ -50,6 +51,15 @@ public class Application implements AppEventListener, FileEventListener {
   public void onFileEvent(FileManager.Event event) {
     if (event.isLocal())
       fileManager.dispatchEvent(event);
+    else if (event.getType() == FileManager.Event.Type.DOWNLOAD) {
+      try {
+        File file = addRemoteFile(event.getFileName());
+        if (file != null)
+          networkManager.dispatchRemoteFileEvent(event, file);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
   }
 
   @Override
@@ -62,9 +72,30 @@ public class Application implements AppEventListener, FileEventListener {
     mainWindow.updateMyFileList(fileManager.getFileList());
   }
 
+  private File addRemoteFile(String fileName) {
+    JFileChooser chooser = new JFileChooser();
+    chooser.setDialogTitle(R.CHOOSE_SAVE_PATH);
+    chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+    int ret = chooser.showDialog(mainWindow, R.SAVE);
+    if (ret == JFileChooser.APPROVE_OPTION) {
+      File file = new File(chooser.getSelectedFile(), fileName);
+      if (file.exists()) {
+        ret = JOptionPane.showConfirmDialog(mainWindow,
+          String.format(R.OVERWRITE, file.getAbsolutePath()),
+          R.ALREADY_EXISTS, JOptionPane.YES_NO_OPTION);
+        if (ret == JOptionPane.YES_OPTION)
+          return file;
+        else
+          return null;
+      } else
+        return file;
+    } else
+      return null;
+  }
+
   private void addNewFile() {
     JFileChooser chooser = new JFileChooser();
-    int ret = chooser.showDialog(null, R.CHOOSE_FILE);
+    int ret = chooser.showDialog(mainWindow, R.CHOOSE_FILE);
     if (ret == JFileChooser.APPROVE_OPTION)
       fileManager.addFile(chooser.getSelectedFile());
   }

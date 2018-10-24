@@ -45,6 +45,10 @@ public class PeerInfo {
     return peerAddress.getHostAddress() + " [" + peerName + "]";
   }
 
+  public long getPeerID() {
+    return peerID;
+  }
+
   @Override
   public String toString() {
     return peerAddress + " [" + peerName + "]";
