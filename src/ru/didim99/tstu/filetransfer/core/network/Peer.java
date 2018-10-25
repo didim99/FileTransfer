@@ -11,7 +11,7 @@ import java.util.LinkedList;
 import ru.didim99.tstu.filetransfer.core.file.*;
 import ru.didim99.tstu.filetransfer.core.utils.Logger;
 
-class Peer extends Thread implements FileEventListener {
+class Peer extends Thread implements FileEventListener, TransferController.ErrorListener {
   private static final String LOG_TAG = "Peer";
 
   private static final class MSGType {
@@ -72,7 +72,7 @@ class Peer extends Thread implements FileEventListener {
           if (delimiter == -1)
             throw new IllegalMessageException();
           int msgType = Integer.parseInt(msg.substring(0, delimiter));
-          msg = msg.substring(delimiter);
+          msg = msg.substring(delimiter + 1);
           //Logger.write(LOG_TAG, "Body: " + msg);
 
           switch (msgType) {
@@ -93,12 +93,13 @@ class Peer extends Thread implements FileEventListener {
               break;
             case MSGType.TRANS_CFG:
               try {
-                int remotePort = Integer.parseInt(msg.substring(1));
+                int remotePort = Integer.parseInt(msg);
                 Logger.write(LOG_TAG, "Received transfer config: " + info);
                 initTransfer(remotePort);
               } catch (NumberFormatException e) {
                 throw new IllegalMessageException();
               } catch (IOException e) {
+                e.printStackTrace();
                 sendError(Error.TRANSFER_NOT_STARTED);
               }
               break;
@@ -220,8 +221,14 @@ class Peer extends Thread implements FileEventListener {
       listener.onRemoteFileListUpdated(this);
   }
 
-  void onTransferFailed(FileState file) {
-    
+  @Override
+  public void onTransferError() {
+    onDisconnectedRemote();
+  }
+
+  @Override
+  public void onTransferFailed(FileState file) {
+
   }
 
   private void sendError(int errCode) {
@@ -261,7 +268,7 @@ class Peer extends Thread implements FileEventListener {
     }
   }
 
-  void onDisconnectedRemote() {
+  private void onDisconnectedRemote() {
     try {
       Logger.write(LOG_TAG, "Disconnected: " + info);
       tc.disconnect();

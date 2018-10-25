@@ -49,6 +49,7 @@ public class NetworkManager implements NetworkEventListener {
     } catch (IllegalStateException e) {
       e.printStackTrace();
     } catch (IOException e) {
+      e.printStackTrace();
       updateStatus(Status.CONNECTED);
     }
   }

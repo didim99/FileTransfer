@@ -88,9 +88,10 @@ public class MainWindow extends JFrame implements StatusPublisher {
       (DefaultListModel<RemoteFileState>) remoteFileList.getModel();
     model.removeAllElements();
 
-    for (RemoteFileState state : fileState) {
+    for (RemoteFileState state : fileState)
       model.addElement(state);
-    }
+    if (peerList.getSelectedIndex() == -1)
+      peerList.setSelectedIndex(0);
   }
 
   @Override

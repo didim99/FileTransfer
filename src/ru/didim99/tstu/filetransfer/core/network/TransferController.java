@@ -31,8 +31,9 @@ public class TransferController extends Thread {
     static final byte CRC_OK      = 0x22;
   }
 
-  private Peer peer;
+  private PeerInfo info;
   private State state;
+  private ErrorListener errListener;
   private EventListener listener;
   private ServerSocket server;
   private int localPort;
@@ -59,7 +60,8 @@ public class TransferController extends Thread {
 
   TransferController(Peer peer) throws IOException {
     this();
-    this.peer = peer;
+    this.info = peer.getInfo();
+    this.errListener = peer;
     server = new ServerSocket(0);
     localPort = server.getLocalPort();
     start();
@@ -68,7 +70,8 @@ public class TransferController extends Thread {
   TransferController(Peer peer, InetAddress remoteAddr, int remotePort)
     throws IOException {
     this();
-    this.peer = peer;
+    this.info = peer.getInfo();
+    this.errListener = peer;
     socket = new Socket(remoteAddr, remotePort);
     connectToRemote();
     start();
@@ -86,6 +89,7 @@ public class TransferController extends Thread {
   public void run() {
     try {
       if (server != null) {
+        Logger.write(LOG_TAG, "Waiting for connection: " + localPort);
         socket = server.accept();
         Logger.write(LOG_TAG, "Connection received: " + socket);
         connectToRemote();
@@ -122,7 +126,7 @@ public class TransferController extends Thread {
     } catch (InterruptedException e) {
       e.printStackTrace();
     } catch (IOException e) {
-      peer.onDisconnectedRemote();
+      errListener.onTransferError();
     }
   }
 
@@ -139,7 +143,7 @@ public class TransferController extends Thread {
   public void waitForFile(File file) throws IOException {
     state = State.PREPARE_DOWNLOADING;
     if (retryCount > MAX_RETRY_COUNT) {
-      peer.onTransferFailed(currentFile);
+      errListener.onTransferFailed(currentFile);
       resetState();
       return;
     }
@@ -150,7 +154,7 @@ public class TransferController extends Thread {
       Logger.write(LOG_TAG, "Waiting for: " + file.getName());
       state = State.WAITING;
     } else
-      peer.onTransferFailed(currentFile);
+      errListener.onTransferFailed(currentFile);
   }
 
   public void startUploading(FileState file) {
@@ -163,7 +167,7 @@ public class TransferController extends Thread {
       crc = Utils.md5(currentFile.getFile());
       onStartUploading();
     } catch (IOException e) {
-      peer.onDisconnectedRemote();
+      errListener.onTransferError();
     }
   }
 
@@ -191,7 +195,7 @@ public class TransferController extends Thread {
       Logger.write(LOG_TAG, "Unable to transfer file");
       currentFile.nextRequest();
       resetState();
-      peer.onTransferFailed(currentFile);
+      errListener.onTransferFailed(currentFile);
       listener.onTransferFinished(currentFile, false);
     } else {
       state = State.PREPARE_UPLOADING;
@@ -243,8 +247,7 @@ public class TransferController extends Thread {
       throw new TransferException("Uploading failed");
   }
 
-  private void onDownloading()
-    throws IOException, TransferException {
+  private void onDownloading() throws IOException {
     Logger.write(LOG_TAG, "Downloading started");
     while (dataSize > 0) {
       int read = in.read(buffer, 0, Math.min(buffer.length, (int) dataSize));
@@ -286,6 +289,7 @@ public class TransferController extends Thread {
 
   private void onTransferCompleted() throws IOException {
     currentFile.nextRequest();
+    currentFile.setBusy(false);
     listener.onTransferFinished(currentFile, true);
     resetState();
   }
@@ -305,7 +309,7 @@ public class TransferController extends Thread {
   }
 
   public PeerInfo getInfo() {
-    return peer.getInfo();
+    return info;
   }
 
   int getLocalPort() {
@@ -336,6 +340,11 @@ public class TransferController extends Thread {
 
   public interface EventListener {
     void onTransferFinished(FileState file, boolean success);
+  }
+
+  interface ErrorListener {
+    void onTransferError();
+    void onTransferFailed(FileState file);
   }
 
   private class TransferException extends Exception {

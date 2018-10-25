@@ -41,12 +41,14 @@ public class FileManager implements TransferController.EventListener {
   }
 
   public void addFile(File file) {
-    if (!file.canRead()) {
+    if (file.canRead())
+      addFileInternal(new FileState(file));
+    else
       Logger.write(LOG_TAG, "File not readable: " + file);
-      return;
-    }
+  }
 
-    FileState newState = new FileState(file);
+  private void addFileInternal(FileState newState) {
+    File file = newState.getFile();
     for (FileState state : files) {
       if (newState.equals(state)) {
         Logger.write(LOG_TAG, "File already added: " + file);
@@ -97,6 +99,8 @@ public class FileManager implements TransferController.EventListener {
 
   @Override
   public void onTransferFinished(FileState file, boolean success) {
+    if (success)
+      addFileInternal(file);
     Long nextPeer = file.peekReuquest();
     if (nextPeer != null) {
       for (TransferController tc : tcl) {

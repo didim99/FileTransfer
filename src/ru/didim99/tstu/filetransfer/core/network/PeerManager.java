@@ -52,9 +52,9 @@ class PeerManager {
     Logger.write(LOG_TAG, "Binding: " + info.toString());
     Peer peer = new Peer(info, listener, fileManager, clientSocket);
     peer.openSocket();
+    peer.initTransfer();
     peer.sendFileList();
     peer.sendPeerList(peers);
-    peer.initTransfer();
     peers.add(peer);
   }
 
