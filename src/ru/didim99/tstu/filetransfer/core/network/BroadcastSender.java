@@ -11,7 +11,6 @@ import ru.didim99.tstu.filetransfer.core.utils.Logger;
 
 public class BroadcastSender extends Thread {
   private static final String LOG_TAG = "BroadcastSender";
-
   private static final long SEND_TIMEOUT = 1000;
   private static final long MAX_SEND_CNT = 10;
 

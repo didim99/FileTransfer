@@ -7,7 +7,6 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
-
 import ru.didim99.tstu.filetransfer.core.file.*;
 import ru.didim99.tstu.filetransfer.core.utils.Logger;
 
@@ -26,6 +25,7 @@ class Peer extends Thread implements FileEventListener, TransferController.Error
 
   private static final class Error {
     private static final int TRANSFER_NOT_STARTED = 1;
+    private static final int TRANSFER_FAILED      = 2;
   }
 
   private NetworkEventListener listener;
@@ -228,7 +228,7 @@ class Peer extends Thread implements FileEventListener, TransferController.Error
 
   @Override
   public void onTransferFailed(FileState file) {
-
+    sendError(Error.TRANSFER_FAILED);
   }
 
   private void sendError(int errCode) {

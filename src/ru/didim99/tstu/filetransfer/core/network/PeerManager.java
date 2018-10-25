@@ -110,6 +110,8 @@ class PeerManager {
   }
 
   boolean isPeerActive(Peer peer) {
+    if (activePeerIndex >= peers.size())
+      return false;
     return peer == peers.get(activePeerIndex);
   }
 }
